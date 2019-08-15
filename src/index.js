@@ -141,6 +141,8 @@ function actionPage(){
     const goods = document.querySelector('.goods');
     const search = document.querySelector('.search-wrapper_input');
     const searchBtn =  document.querySelector('.search-btn');
+
+    // если есть акция
     discountCheckbox.addEventListener('click',()=>{
         cards.forEach((card)=>{
             if(discountCheckbox.checked)
@@ -155,7 +157,7 @@ function actionPage(){
         });
     });
 
-
+// если ввели цену
     function filterPrice(){
         cards.forEach((card)=>{
             const cardPrice = card.querySelector('.card-price');
@@ -171,7 +173,8 @@ function actionPage(){
     }
     min.addEventListener('change',filterPrice); //  скобочки писать не надо - иначе сразу вызовет
     max.addEventListener('change',filterPrice);
-// поиск
+
+// поиск в строке
     searchBtn.addEventListener('click', ()=> {
         const searchText = new RegExp(search.value.trim(),'i'); // получаем регулярное выражение из текста
         // trim - обрезает пробелы, i - с ним не важен регистр
