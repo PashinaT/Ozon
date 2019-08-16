@@ -17,7 +17,7 @@
      });
  }
 
- toggleCgeckbox();
+
 
 // 1 способ
 //let checkbox = document.querySelector('#discount-checkbox'); подключились по id(используем решётку)
@@ -79,7 +79,7 @@ function toggleCart(){
     });
 }
 
-toggleCart();
+
 // конец корзины
 // работа с товаром
 function addCart(){
@@ -128,7 +128,7 @@ function addCart(){
     }
 }
 
-addCart();
+
 // end работы
 
 // фильтр акции - сказали не самый лучший способ
@@ -143,38 +143,14 @@ function actionPage(){
     const searchBtn =  document.querySelector('.search-btn');
 
     // если есть акция
-    discountCheckbox.addEventListener('click',()=>{
-        cards.forEach((card)=>{
-            if(discountCheckbox.checked)
-            {
-                if(!card.querySelector('.card-sale')){
-                    card.parentNode.style.display='none';// обратились к родителю карточки
-                }
-            } else {
-                card.parentNode.style.display='';
-            }
+    discountCheckbox.addEventListener('click',filter);
 
-        });
-    });
+    // если ввели цену
 
-// если ввели цену
-    function filterPrice(){
-        cards.forEach((card)=>{
-            const cardPrice = card.querySelector('.card-price');
-            const price = parseFloat(cardPrice.textContent);
-            if((min.value && price < min.value) || (max.value && price > max.value)){
+    min.addEventListener('change',filter); //  скобочки писать не надо - иначе сразу вызовет
+    max.addEventListener('change',filter);
 
-                card.parentNode.remove();
-            } else{
-                goods.appendChild(card.parentNode);
-            }
-
-        });
-    }
-    min.addEventListener('change',filterPrice); //  скобочки писать не надо - иначе сразу вызовет
-    max.addEventListener('change',filterPrice);
-
-// поиск в строке
+    // поиск в строке
     searchBtn.addEventListener('click', ()=> {
         const searchText = new RegExp(search.value.trim(),'i'); // получаем регулярное выражение из текста
         // trim - обрезает пробелы, i - с ним не важен регистр
@@ -190,9 +166,131 @@ function actionPage(){
 
 
     });
+
+    //ab
+    function filter(){
+        cards.forEach((card)=>{
+            const cardPrice = card.querySelector('.card-price');
+            const price = parseFloat(cardPrice.textContent);
+            const discount= card.querySelector('.card-sale');
+
+            if((min.value && price < min.value) || (max.value && price > max.value)) {
+                card.parentNode.remove();
+            } else if(discountCheckbox.checked && !discount){
+                card.parentNode.remove();
+            } else{
+                goods.appendChild(card.parentNode);
+            }
+
+            });
+
+    }
 }
 
-actionPage();
+
 
 
 //конец фильтра
+
+//получение данных с сервера
+function getData(){
+    const goodsWrapper =  document.querySelector(('.goods'));
+    //API - по умолчанию как get запрос
+    return fetch('../db/db.json').then((response)=>{ //после загрузки файла then запускает функцию
+        if(response.ok){
+            return response.json();
+        } else {
+            throw new Error(response.status); // выкинули ошибку с кодом статуса
+        }
+
+    }).then((data) =>{
+        return data;
+    })
+        .catch((err)=>{
+            console.warn(err);
+            goodsWrapper.innerHTML = '<div style="color: red; font-size:30px">Что-то пошло не так!</div>'; //заменили на текст
+        });
+}
+//вывод карточек товара
+function renderCards(data){
+    const goodsWrapper= document.querySelector('.goods');
+    data.goods.forEach((good)=>{
+        const card = document.createElement('div');// создали карточку
+       card.className='col-12 col-md-6 col-lg-4 col-xl-3'
+        card.innerHTML=`
+        
+                <div class="card" data-category="${good.category}">
+                ${good.sale ? '<div class="card-sale">🔥Hot Sale🔥</div>':''} <!--условный оператор-->
+                   <div class="card-img-wrapper">
+                        <span class="card-img-top"
+                      style="background-image: url('${good.img}')"></span>
+                   </div>
+                   <div class="card-body justify-content-between">
+                        <div class="card-price" style="${good.sale ? 'color:red':''}">${good.price} ₽</div>
+                        <h5 class="card-title">${good.title}</h5>
+                        <button class="btn btn-primary">В корзину</button>
+                   </div>
+                </div>
+
+        `;
+        goodsWrapper.appendChild(card);// вывод карты на страницу
+    });
+
+}
+// end получения данных с сервера
+
+
+function renderCatalog(){
+     const cards = document.querySelectorAll('.goods .card');
+     const categories = new Set();
+     const catalogWrapper = document.querySelector('.catalog');
+     const catalogBtn = document.querySelector('.catalog-button');
+     const catalogList = document.querySelector('.catalog-list');
+     cards.forEach((card)=>{
+         categories.add(card.dataset.category);
+     });
+
+
+     categories.forEach((item)=>{
+         const li = document.createElement('li');
+         li.textContent=item;
+         catalogList.appendChild(li);
+     });
+
+     console.log(categories);
+
+     catalogBtn.addEventListener('click',(event)=>{
+        if(catalogWrapper.style.display){
+            catalogWrapper.style.display='';
+             } else{
+            catalogWrapper.style.display='block';
+        }
+        if(event.target.tagName ==='LI'){
+            cards.forEach((card)=>{
+               if(card.dataset.category === event.target.textContent) {
+                   card.parentNode.style.display="";
+               }else{
+                   card.parentNode.style.display="none";
+               }
+            });
+        }
+        });
+}
+
+
+
+
+
+
+// сделали так, чтобы сначала загружались карты а только затем выполнялись действия с ними
+getData().then((data)=>{
+    renderCards(data);
+    toggleCart();
+    toggleCgeckbox();
+    actionPage();
+    addCart();
+    renderCatalog();
+});
+
+
+
